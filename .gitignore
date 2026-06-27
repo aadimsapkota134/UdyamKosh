@@ -1,0 +1,23 @@
+# Python
+__pycache__/
+*.pyc
+venv/
+.env
+
+# VS Code
+.vscode/
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# Python cache
+.pytest_cache/
+
+# Node (if added later)
+node_modules/
+
+venv/
+__pycache__/
+*.pyc
+.env
