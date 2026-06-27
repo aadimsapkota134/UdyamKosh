@@ -1,0 +1,132 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>RinSetu — Startups</title>
+  <link rel="stylesheet" href="../css/style.css">
+</head>
+<body>
+
+<nav>
+  <a class="nav-brand" href="dashboard.html">RinSetu</a>
+  <a class="nav-link"  href="dashboard.html">Dashboard</a>
+  <a class="nav-link active" href="startups.html">Startups</a>
+  <a class="nav-link"  href="applications.html">Applications</a>
+  <a class="nav-link"  href="loans.html">Loans</a>
+</nav>
+
+<div class="page-wrap">
+  <p class="page-title">Registered Startups</p>
+  <p class="page-subtitle">All startups eligible for the concessional loan fund</p>
+
+  <!-- Register form -->
+  <div class="card" style="padding:20px">
+    <div class="card-header" style="margin:-20px -20px 20px; padding:12px 20px">
+      Register new startup
+    </div>
+    <form id="register-form">
+      <div class="form-grid">
+        <div class="form-group">
+          <label>Startup name</label>
+          <input name="name" required placeholder="e.g. Sagarmatha Tech">
+        </div>
+        <div class="form-group">
+          <label>Registration number</label>
+          <input name="registration_no" required placeholder="e.g. REG-BAG-001">
+        </div>
+        <div class="form-group">
+          <label>Province</label>
+          <select name="province" required>
+            <option value="">Select province</option>
+            <option>Koshi</option>
+            <option>Madhesh</option>
+            <option>Bagmati</option>
+            <option>Gandaki</option>
+            <option>Lumbini</option>
+            <option>Karnali</option>
+            <option>Sudurpashchim</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label>Sector</label>
+          <input name="sector" placeholder="e.g. Agriculture, Technology">
+        </div>
+        <div class="form-group">
+          <label>Annual turnover (Rs)</label>
+          <input name="annual_turnover" type="number" placeholder="e.g. 5000000">
+        </div>
+        <div class="form-group">
+          <label>Registered on</label>
+          <input name="registered_on" type="date" required>
+        </div>
+        <div class="form-group">
+          <label>Owner name</label>
+          <input name="owner_name" placeholder="Full name">
+        </div>
+        <div class="form-group">
+          <label>Contact email</label>
+          <input name="contact_email" type="email" placeholder="owner@startup.com">
+        </div>
+      </div>
+      <button type="submit" class="btn btn-primary">Register startup</button>
+    </form>
+  </div>
+
+  <!-- Startups table -->
+  <div class="card">
+    <div class="card-header">All startups</div>
+    <table>
+      <thead>
+        <tr>
+          <th>Name</th>
+          <th>Province</th>
+          <th>Sector</th>
+          <th>Annual turnover</th>
+          <th>Owner</th>
+          <th>Status</th>
+        </tr>
+      </thead>
+      <tbody id="startup-table">
+        <tr><td colspan="6" style="text-align:center;color:var(--muted);padding:24px">Loading…</td></tr>
+      </tbody>
+    </table>
+  </div>
+</div>
+
+<div id="toast"></div>
+<script src="../js/api.js"></script>
+<script>
+  async function loadStartups() {
+    try {
+      const startups = await apiGet("/startups/");
+      const tbody = document.getElementById("startup-table");
+      tbody.innerHTML = startups.map(s => `
+        <tr>
+          <td>${s.name}</td>
+          <td>${s.province}</td>
+          <td>${s.sector || "—"}</td>
+          <td>${s.annual_turnover ? fmtRs(s.annual_turnover) : "—"}</td>
+          <td>${s.owner_name || "—"}</td>
+          <td>${badge(s.status)}</td>
+        </tr>
+      `).join("");
+    } catch (e) { toast(e.message, true); }
+  }
+
+  document.getElementById("register-form").addEventListener("submit", async function (e) {
+    e.preventDefault();
+    const fd   = new FormData(this);
+    const body = Object.fromEntries(fd.entries());
+    try {
+      await apiPost("/startups/", body);
+      toast("Startup registered successfully!");
+      this.reset();
+      loadStartups();
+    } catch (e) { toast(e.message, true); }
+  });
+
+  loadStartups();
+</script>
+</body>
+</html>

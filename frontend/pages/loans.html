@@ -1,0 +1,126 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>RinSetu — Loans</title>
+  <link rel="stylesheet" href="../css/style.css">
+</head>
+<body>
+
+<nav>
+  <a class="nav-brand" href="dashboard.html">RinSetu</a>
+  <a class="nav-link"  href="dashboard.html">Dashboard</a>
+  <a class="nav-link"  href="startups.html">Startups</a>
+  <a class="nav-link"  href="applications.html">Applications</a>
+  <a class="nav-link active" href="loans.html">Loans</a>
+</nav>
+
+<div class="page-wrap">
+  <p class="page-title">Active Loans</p>
+  <p class="page-subtitle">3% interest — Rs 730M fund (FY 2082/83 budget)</p>
+
+  <!-- Province summary (GROUP BY demo) -->
+  <div class="card">
+    <div class="card-header">Province-wise disbursement</div>
+    <table>
+      <thead>
+        <tr>
+          <th>Province</th>
+          <th>Loans</th>
+          <th>Total disbursed</th>
+          <th>Avg outstanding</th>
+        </tr>
+      </thead>
+      <tbody id="summary-table">
+        <tr><td colspan="4" style="text-align:center;color:var(--muted);padding:16px">Loading…</td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <!-- All loans -->
+  <div class="card">
+    <div class="card-header">All loans</div>
+    <table>
+      <thead>
+        <tr>
+          <th>Startup</th>
+          <th>Province</th>
+          <th>Principal</th>
+          <th>Outstanding</th>
+          <th>% repaid</th>
+          <th>Due date</th>
+          <th>Status</th>
+        </tr>
+      </thead>
+      <tbody id="loans-table">
+        <tr><td colspan="7" style="text-align:center;color:var(--muted);padding:24px">Loading…</td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <!-- Overdue -->
+  <div class="card">
+    <div class="card-header" style="color:var(--danger)">⚠ Overdue loans</div>
+    <table>
+      <thead>
+        <tr><th>Startup</th><th>Email</th><th>Outstanding</th><th>Days overdue</th></tr>
+      </thead>
+      <tbody id="overdue-table">
+        <tr><td colspan="4" style="text-align:center;color:var(--muted);padding:16px">Loading…</td></tr>
+      </tbody>
+    </table>
+  </div>
+</div>
+
+<div id="toast"></div>
+<script src="../js/api.js"></script>
+<script>
+  async function loadLoans() {
+    try {
+      const [loans, summary, overdue] = await Promise.all([
+        apiGet("/loans/"),
+        apiGet("/loans/summary"),
+        apiGet("/loans/overdue"),
+      ]);
+
+      document.getElementById("summary-table").innerHTML = summary.length
+        ? summary.map(r => `
+            <tr>
+              <td>${r.province}</td>
+              <td>${r.total_loans}</td>
+              <td>${fmtRs(r.total_disbursed)}</td>
+              <td>${fmtRs(Math.round(r.avg_outstanding))}</td>
+            </tr>`).join("")
+        : `<tr><td colspan="4" style="text-align:center;color:var(--muted);padding:16px">No data yet.</td></tr>`;
+
+      document.getElementById("loans-table").innerHTML = loans.length
+        ? loans.map(l => `
+            <tr>
+              <td>${l.startup_name}</td>
+              <td>${l.province}</td>
+              <td>${fmtRs(l.principal_amount)}</td>
+              <td>${fmtRs(l.outstanding_balance)}</td>
+              <td>${l.percent_repaid ?? 0}%</td>
+              <td>${fmtDate(l.due_date)}</td>
+              <td>${badge(l.status)}</td>
+            </tr>`).join("")
+        : `<tr><td colspan="7" style="text-align:center;color:var(--muted);padding:24px">No loans disbursed yet.</td></tr>`;
+
+      document.getElementById("overdue-table").innerHTML = overdue.length
+        ? overdue.map(o => `
+            <tr>
+              <td>${o.name}</td>
+              <td>${o.contact_email}</td>
+              <td>${fmtRs(o.outstanding_balance)}</td>
+              <td style="color:var(--danger);font-weight:600">${o.days_overdue} days</td>
+            </tr>`).join("")
+        : `<tr><td colspan="4" style="text-align:center;color:var(--muted);padding:16px">No overdue loans.</td></tr>`;
+
+    } catch (e) { toast(e.message, true); }
+  }
+
+  loadLoans();
+</script>
+</body>
+</html>

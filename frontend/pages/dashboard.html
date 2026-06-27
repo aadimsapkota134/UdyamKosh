@@ -1,0 +1,111 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>RinSetu — Dashboard</title>
+  <link rel="stylesheet" href="../css/style.css">
+</head>
+<body>
+
+<nav>
+  <a class="nav-brand" href="dashboard.html">RinSetu</a>
+  <a class="nav-link active"  href="dashboard.html">Dashboard</a>
+  <a class="nav-link"         href="startups.html">Startups</a>
+  <a class="nav-link"         href="applications.html">Applications</a>
+  <a class="nav-link"         href="loans.html">Loans</a>
+</nav>
+
+<div class="page-wrap">
+  <p class="page-title">Loan Officer Dashboard</p>
+  <p class="page-subtitle">FY 2082/83 — Startup Loan Fund (Rs 73 Cr)</p>
+
+  <div class="stats-grid" id="stats">
+    <div class="stat-card"><div class="label">Total applications</div><div class="value" id="s-total">—</div></div>
+    <div class="stat-card"><div class="label">Under review</div><div class="value" id="s-review">—</div></div>
+    <div class="stat-card"><div class="label">Active loans</div><div class="value" id="s-active">—</div></div>
+    <div class="stat-card"><div class="label">Total disbursed</div><div class="value" id="s-disbursed">—</div></div>
+    <div class="stat-card"><div class="label" style="color:var(--danger)">Overdue</div><div class="value" id="s-overdue" style="color:var(--danger)">—</div></div>
+  </div>
+
+  <div class="card">
+    <div class="card-header">
+      <span>Recent applications</span>
+      <div class="search-wrap">
+        <input type="text" id="search" placeholder="Search startup..." style="width:200px">
+      </div>
+    </div>
+    <table>
+      <thead>
+        <tr>
+          <th>Startup</th>
+          <th>Province</th>
+          <th>Amount</th>
+          <th>Applied on</th>
+          <th>Status</th>
+          <th></th>
+        </tr>
+      </thead>
+      <tbody id="app-table-body">
+        <tr><td colspan="6" style="text-align:center;color:var(--muted);padding:24px">Loading…</td></tr>
+      </tbody>
+    </table>
+  </div>
+</div>
+
+<div id="toast"></div>
+<script src="../js/api.js"></script>
+<script>
+  let allRows = [];
+
+  async function loadDashboard() {
+    try {
+      const [apps, loans, overdue] = await Promise.all([
+        apiGet("/applications/"),
+        apiGet("/loans/"),
+        apiGet("/loans/overdue"),
+      ]);
+
+      document.getElementById("s-total").textContent    = apps.length;
+      document.getElementById("s-review").textContent   = apps.filter(a => a.status === "under_review").length;
+      document.getElementById("s-active").textContent   = loans.filter(l => l.status === "active").length;
+      const disbursed = loans.reduce((s, l) => s + parseFloat(l.principal_amount || 0), 0);
+      document.getElementById("s-disbursed").textContent = fmtRs(disbursed);
+      document.getElementById("s-overdue").textContent  = overdue.length;
+
+      allRows = apps;
+      renderTable(apps);
+    } catch (e) {
+      toast(e.message, true);
+    }
+  }
+
+  function renderTable(rows) {
+    const tbody = document.getElementById("app-table-body");
+    if (!rows.length) {
+      tbody.innerHTML = `<tr><td colspan="6" style="text-align:center;color:var(--muted);padding:24px">No applications found.</td></tr>`;
+      return;
+    }
+    tbody.innerHTML = rows.map(a => `
+      <tr>
+        <td>${a.startup_name}</td>
+        <td>${a.province}</td>
+        <td>${fmtRs(a.requested_amount)}</td>
+        <td>${fmtDate(a.applied_on)}</td>
+        <td>${badge(a.status)}</td>
+        <td>
+          <a class="btn btn-sm" href="applications.html?id=${a.application_id}">View</a>
+        </td>
+      </tr>
+    `).join("");
+  }
+
+  document.getElementById("search").addEventListener("input", function () {
+    const q = this.value.toLowerCase();
+    renderTable(allRows.filter(a => a.startup_name.toLowerCase().includes(q)));
+  });
+
+  loadDashboard();
+</script>
+</body>
+</html>

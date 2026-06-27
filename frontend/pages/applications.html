@@ -1,0 +1,147 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>RinSetu — Applications</title>
+  <link rel="stylesheet" href="../css/style.css">
+</head>
+<body>
+
+<nav>
+  <a class="nav-brand" href="dashboard.html">RinSetu</a>
+  <a class="nav-link"  href="dashboard.html">Dashboard</a>
+  <a class="nav-link"  href="startups.html">Startups</a>
+  <a class="nav-link active" href="applications.html">Applications</a>
+  <a class="nav-link"  href="loans.html">Loans</a>
+</nav>
+
+<div class="page-wrap">
+  <p class="page-title">Loan Applications</p>
+  <p class="page-subtitle">Max Rs 10,00,000 per startup at 3% interest</p>
+
+  <!-- Submit application -->
+  <div class="card" style="padding:20px">
+    <div class="card-header" style="margin:-20px -20px 20px;padding:12px 20px">
+      Submit new application
+    </div>
+    <form id="apply-form">
+      <div class="form-grid">
+        <div class="form-group">
+          <label>Startup ID</label>
+          <input name="startup_id" type="number" required placeholder="e.g. 1">
+        </div>
+        <div class="form-group">
+          <label>Requested amount (Rs)</label>
+          <input name="requested_amount" type="number" required placeholder="Max 10,00,000">
+        </div>
+      </div>
+      <div class="form-group">
+        <label>Purpose</label>
+        <textarea name="purpose" placeholder="Describe how the loan will be used…"></textarea>
+      </div>
+      <button type="submit" class="btn btn-primary">Submit application</button>
+    </form>
+  </div>
+
+  <!-- Filter + list -->
+  <div class="card">
+    <div class="card-header">
+      <span>All applications</span>
+      <select id="status-filter">
+        <option value="">All statuses</option>
+        <option value="submitted">Submitted</option>
+        <option value="under_review">Under review</option>
+        <option value="approved">Approved</option>
+        <option value="rejected">Rejected</option>
+        <option value="disbursed">Disbursed</option>
+      </select>
+    </div>
+    <table>
+      <thead>
+        <tr>
+          <th>#</th>
+          <th>Startup</th>
+          <th>Province</th>
+          <th>Amount</th>
+          <th>Applied on</th>
+          <th>Status</th>
+          <th>Actions</th>
+        </tr>
+      </thead>
+      <tbody id="apps-table">
+        <tr><td colspan="7" style="text-align:center;color:var(--muted);padding:24px">Loading…</td></tr>
+      </tbody>
+    </table>
+  </div>
+</div>
+
+<div id="toast"></div>
+<script src="../js/api.js"></script>
+<script>
+  async function loadApps(status = "") {
+    try {
+      const path = status ? `/applications/?status=${status}` : "/applications/";
+      const apps = await apiGet(path);
+      const tbody = document.getElementById("apps-table");
+      tbody.innerHTML = apps.length
+        ? apps.map(a => `
+            <tr>
+              <td>${a.application_id}</td>
+              <td>${a.startup_name}</td>
+              <td>${a.province}</td>
+              <td>${fmtRs(a.requested_amount)}</td>
+              <td>${fmtDate(a.applied_on)}</td>
+              <td>${badge(a.status)}</td>
+              <td style="display:flex;gap:6px">
+                ${a.status === "submitted" || a.status === "under_review" ? `
+                  <button class="btn btn-sm" onclick="review(${a.application_id}, 'approved')">Approve</button>
+                  <button class="btn btn-sm" style="color:var(--danger)" onclick="review(${a.application_id}, 'rejected')">Reject</button>
+                ` : ""}
+                ${a.status === "approved" ? `
+                  <button class="btn btn-sm btn-primary" onclick="disburse(${a.application_id})">Disburse</button>
+                ` : ""}
+              </td>
+            </tr>`).join("")
+        : `<tr><td colspan="7" style="text-align:center;color:var(--muted);padding:24px">No applications found.</td></tr>`;
+    } catch (e) { toast(e.message, true); }
+  }
+
+  async function review(id, status) {
+    try {
+      await apiPatch(`/applications/${id}/review`, { status, reviewed_by: 1 });
+      toast(`Application ${status}`);
+      loadApps(document.getElementById("status-filter").value);
+    } catch (e) { toast(e.message, true); }
+  }
+
+  async function disburse(app_id) {
+    const months = prompt("Enter loan tenure in months (6–84):", "24");
+    if (!months) return;
+    try {
+      await apiPost(`/loans/${app_id}/disburse`, { tenure_months: parseInt(months) });
+      toast("Loan disbursed! Tax exemption record created automatically.");
+      loadApps();
+    } catch (e) { toast(e.message, true); }
+  }
+
+  document.getElementById("status-filter").addEventListener("change", function () {
+    loadApps(this.value);
+  });
+
+  document.getElementById("apply-form").addEventListener("submit", async function (e) {
+    e.preventDefault();
+    const fd   = new FormData(this);
+    const body = Object.fromEntries(fd.entries());
+    try {
+      await apiPost("/applications/", body);
+      toast("Application submitted!");
+      this.reset();
+      loadApps();
+    } catch (e) { toast(e.message, true); }
+  });
+
+  loadApps();
+</script>
+</body>
+</html>
