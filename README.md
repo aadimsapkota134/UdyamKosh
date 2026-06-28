@@ -1,5 +1,5 @@
-# RinSetu — Startup Loan Management System
-*A DBMS course mini-project | Nepal Budget FY 2082/83*
+# UdyamKosh — Startup Loan Management System
+*A DBMS course mini-project*
 
 ---
 
@@ -8,7 +8,7 @@
 | Layer    | Choice                  |
 |----------|-------------------------|
 | Database | PostgreSQL               |
-| Backend  | Python 3.11 + Flask      |
+| Backend  | Python + Flask      |
 | Frontend | Plain HTML + Vanilla JS  |
 
 ---
@@ -59,7 +59,7 @@ CREATE DATABASE rinsetu;
 cd backend
 cp .env.example .env          # fill in your DB password
 pip install -r requirements.txt
-python app.py                 # starts on http://localhost:5000
+python app.py                 # starts on http://localhost:5000 on windows and http://127.0.0.1:8001 on mac(edit the code)
 ```
 
 On first run, `init_db()` reads `sql/schema.sql` and creates all tables, the trigger, the view, and seed data automatically.
@@ -72,6 +72,7 @@ Open `frontend/pages/dashboard.html` directly in your browser, or serve with:
 cd frontend
 python -m http.server 8080
 # then visit http://localhost:8080/pages/dashboard.html
+# or http://localhost:8000/pages/dashboard.html in macOS
 ```
 
 ---
