@@ -45,20 +45,6 @@ CREATE TABLE document (
 -- ─────────────────────────────────────────────
 -- 3. LOAN_APPLICATION
 -- ─────────────────────────────────────────────
-CREATE TABLE loan_application (
-    application_id   SERIAL PRIMARY KEY,
-    startup_id       INT           NOT NULL REFERENCES startup(startup_id),
-    requested_amount DECIMAL(15,2) NOT NULL
-                     CHECK (requested_amount > 0 AND requested_amount <= 10000000),
-    purpose          TEXT,
-    applied_on       DATE          DEFAULT CURRENT_DATE,
-    status           VARCHAR(20)   DEFAULT 'submitted'
-                     CHECK (status IN ('submitted','under_review','approved',
-                                       'rejected','disbursed')),
-    reviewed_by      INT,
-    reviewed_on      DATE,
-    review_notes     TEXT
-);
 
 -- ─────────────────────────────────────────────
 -- 4. LOAN
@@ -92,17 +78,6 @@ CREATE TABLE repayment (
 
 -- ─────────────────────────────────────────────
 -- 6. TAX_EXEMPTION
--- ─────────────────────────────────────────────
-CREATE TABLE tax_exemption (
-    exemption_id     SERIAL PRIMARY KEY,
-    loan_id          INT         UNIQUE NOT NULL REFERENCES loan(loan_id),
-    exemption_start  DATE        NOT NULL,
-    exemption_end    DATE        NOT NULL,
-    fiscal_year      VARCHAR(10),
-    verified_by_ird  VARCHAR(100),
-    status           VARCHAR(20) DEFAULT 'pending'
-                     CHECK (status IN ('pending','active','expired','revoked'))
-);
 
 -- ─────────────────────────────────────────────
 -- TRIGGER: auto-create tax exemption on loan insert
@@ -121,9 +96,7 @@ BEGIN
 END;
 $$ LANGUAGE plpgsql;
 
-CREATE TRIGGER trg_tax_exemption_on_disburse
-AFTER INSERT ON loan
-FOR EACH ROW EXECUTE FUNCTION create_tax_exemption();
+
 
 -- ─────────────────────────────────────────────
 -- VIEW: v_loan_summary (replaces the heavy JOIN query)
