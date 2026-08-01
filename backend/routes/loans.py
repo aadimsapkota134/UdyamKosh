@@ -64,11 +64,6 @@ def province_summary():
 
 @loans_bp.route("/<int:app_id>/disburse", methods=["POST"])
 def disburse_loan(app_id):
-    """
-    Disburse a loan for an approved application.
-    Wrapped in a single transaction — if tax_exemption insert fails,
-    the loan insert also rolls back (ACID demo).
-    """
     data = request.get_json()
     conn = get_connection()
     try:
@@ -84,7 +79,7 @@ def disburse_loan(app_id):
             if appl["status"] != "approved":
                 return jsonify({"error": "Application is not in approved state"}), 400
 
-            # BEGIN transaction (psycopg2 is always in a transaction)
+            # Insert loan – the trigger will create the tax_exemption record
             cur.execute("""
                 INSERT INTO loan
                     (application_id, principal_amount, interest_rate,
@@ -103,25 +98,17 @@ def disburse_loan(app_id):
             ))
             loan = cur.fetchone()
 
-            # Tax exemption auto-insert (mirrors the trigger — shown explicitly here
-            # for the ACID transaction demo; the DB trigger also handles this)
-            cur.execute("""
-                INSERT INTO tax_exemption
-                    (loan_id, exemption_start, exemption_end, fiscal_year)
-                VALUES (%s, CURRENT_DATE, CURRENT_DATE + INTERVAL '5 years', %s)
-            """, (loan["loan_id"], data.get("fiscal_year", "2082/83")))
-
             # Mark application as disbursed
             cur.execute("""
                 UPDATE loan_application SET status = 'disbursed'
                 WHERE application_id = %s
             """, (app_id,))
 
-            conn.commit()   # COMMIT — all three writes land together
+            conn.commit()
             return jsonify(loan), 201
 
     except Exception as e:
-        conn.rollback()     # ROLLBACK — none of them land on error
+        conn.rollback()
         return jsonify({"error": str(e)}), 500
     finally:
         conn.close()
