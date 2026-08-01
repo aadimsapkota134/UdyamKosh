@@ -24,22 +24,6 @@ def list_loans():
         conn.close()
 
 @loans_bp.route("/overdue", methods=["GET"])
-def overdue_loans():
-    conn = get_connection()
-    try:
-        with conn.cursor() as cur:
-            cur.execute("""
-                SELECT s.name, s.contact_email,
-                       l.loan_id, l.outstanding_balance,
-                       CURRENT_DATE - l.due_date AS days_overdue
-                FROM loan l
-                JOIN loan_application la ON l.application_id = la.application_id
-                JOIN startup s           ON la.startup_id = s.startup_id
-                WHERE l.status = 'active' AND l.due_date < CURRENT_DATE
-            """)
-            return jsonify(cur.fetchall())
-    finally:
-        conn.close()
 
 @loans_bp.route("/summary", methods=["GET"])
 def province_summary():
@@ -62,22 +46,6 @@ def province_summary():
     finally:
         conn.close()
 
-@loans_bp.route("/<int:app_id>/disburse", methods=["POST"])
-def disburse_loan(app_id):
-    data = request.get_json()
-    conn = get_connection()
-    try:
-        with conn.cursor() as cur:
-            # Verify application is approved
-            cur.execute(
-                "SELECT * FROM loan_application WHERE application_id = %s",
-                (app_id,)
-            )
-            appl = cur.fetchone()
-            if not appl:
-                return jsonify({"error": "Application not found"}), 404
-            if appl["status"] != "approved":
-                return jsonify({"error": "Application is not in approved state"}), 400
 
             # Insert loan – the trigger will create the tax_exemption record
             cur.execute("""
