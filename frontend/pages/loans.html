@@ -8,13 +8,8 @@
 </head>
 <body>
 
-<nav>
-  <a class="nav-brand" href="dashboard.html">RinSetu</a>
-  <a class="nav-link"  href="dashboard.html">Dashboard</a>
-  <a class="nav-link"  href="startups.html">Startups</a>
-  <a class="nav-link"  href="applications.html">Applications</a>
-  <a class="nav-link active" href="loans.html">Loans</a>
-</nav>
+
+  
 
 <div class="page-wrap">
   <p class="page-title">Active Loans</p>
@@ -77,17 +72,7 @@
 <script src="../js/api.js"></script>
 <script>
   // ── Universal date formatter ──
-  function formatDueDate(dateStr) {
-    if (!dateStr) return '';
-    const d = new Date(dateStr);
-    if (isNaN(d.getTime())) return dateStr; // fallback
-
-    const monthNames = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
-    const day = String(d.getUTCDate()).padStart(2, '0');
-    const month = monthNames[d.getUTCMonth()];
-    const year = d.getUTCFullYear();
-    return `${day} ${month} ${year}`;
-  }
+ 
 
   async function loadLoans() {
     try {
@@ -120,18 +105,7 @@
             </tr>`).join("")
         : `<tr><td colspan="7" style="text-align:center;color:var(--muted);padding:24px">No loans disbursed yet.</td></tr>`;
 
-      document.getElementById("overdue-table").innerHTML = overdue.length
-        ? overdue.map(o => `
-            <tr>
-              <td>${o.name}</td>
-              <td>${o.contact_email}</td>
-              <td>${fmtRs(o.outstanding_balance)}</td>
-              <td style="color:var(--danger);font-weight:600">${o.days_overdue} days</td>
-            </tr>`).join("")
-        : `<tr><td colspan="4" style="text-align:center;color:var(--muted);padding:16px">No overdue loans.</td></tr>`;
-
-    } catch (e) { toast(e.message, true); }
-  }
+      
 
   loadLoans();
 </script>
