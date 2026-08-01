@@ -76,6 +76,19 @@
 <div id="toast"></div>
 <script src="../js/api.js"></script>
 <script>
+  // ── Universal date formatter ──
+  function formatDueDate(dateStr) {
+    if (!dateStr) return '';
+    const d = new Date(dateStr);
+    if (isNaN(d.getTime())) return dateStr; // fallback
+
+    const monthNames = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+    const day = String(d.getUTCDate()).padStart(2, '0');
+    const month = monthNames[d.getUTCMonth()];
+    const year = d.getUTCFullYear();
+    return `${day} ${month} ${year}`;
+  }
+
   async function loadLoans() {
     try {
       const [loans, summary, overdue] = await Promise.all([
@@ -102,7 +115,7 @@
               <td>${fmtRs(l.principal_amount)}</td>
               <td>${fmtRs(l.outstanding_balance)}</td>
               <td>${l.percent_repaid ?? 0}%</td>
-              <td>${fmtDate(l.due_date)}</td>
+              <td>${formatDueDate(l.due_date)}</td>
               <td>${badge(l.status)}</td>
             </tr>`).join("")
         : `<tr><td colspan="7" style="text-align:center;color:var(--muted);padding:24px">No loans disbursed yet.</td></tr>`;
