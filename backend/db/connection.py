@@ -1,6 +1,8 @@
 import psycopg2
 from psycopg2.extras import RealDictCursor
 import os
+from dotenv import load_dotenv
+load_dotenv() 
 
 DB_CONFIG = {
     "dbname":   os.getenv("DB_NAME",     "rinsetu"),
