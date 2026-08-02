@@ -45,7 +45,20 @@ CREATE TABLE document (
 -- ─────────────────────────────────────────────
 -- 3. LOAN_APPLICATION
 -- ─────────────────────────────────────────────
-
+CREATE TABLE loan_application (
+application_id   SERIAL PRIMARY KEY,
+startup_id       INT           NOT NULL REFERENCES startup(startup_id),
+requested_amount DECIMAL(15,2) NOT NULL
+CHECK (requested_amount > 0 AND requested_amount <= 10000000),
+purpose          TEXT,
+applied_on       DATE          DEFAULT CURRENT_DATE,
+status           VARCHAR(20)   DEFAULT 'submitted'
+CHECK (status IN ('submitted','under_review','approved',
+'rejected','disbursed')),
+reviewed_by      INT,
+reviewed_on      DATE,
+review_notes     TEXT
+);
 -- ─────────────────────────────────────────────
 -- 4. LOAN
 -- ─────────────────────────────────────────────
