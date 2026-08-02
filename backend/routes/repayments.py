@@ -24,7 +24,6 @@ def loan_repayments(loan_id):
         conn.close()
 
 @repayments_bp.route("/", methods=["POST"])
-
 def record_repayment():
         data = request.get_json()
           conn = get_connection()
