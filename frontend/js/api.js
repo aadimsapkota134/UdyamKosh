@@ -13,9 +13,6 @@ async function apiFetch(path, options = {}) {
   return res.json();
 }
 
-const apiGet    = (path)         => apiFetch(path);
-const apiPost   = (path, body)   => apiFetch(path, { method: "POST",  body: JSON.stringify(body) });
-const apiPatch  = (path, body)   => apiFetch(path, { method: "PATCH", body: JSON.stringify(body) });
 
 // ── Toast ──────────────────────────────────────────────────
 function toast(msg, error = false) {
@@ -37,12 +34,19 @@ const STATUS_CLASS = {
   closed:       "badge-closed",
   defaulted:    "badge-overdue",
 };
-
+function titleCase(text) {
+  return text
+    .split("_")
+    .map(word => word.charAt(0).toUpperCase() + word.slice(1))
+    .join(" ");
+}
 function badge(status) {
   const cls = STATUS_CLASS[status] || "badge-review";
   return `<span class="badge ${cls}">${status.replace("_", " ")}</span>`;
 }
-
+function isEmpty(value) {
+  return value === null || value === undefined || value === "";
+}
 // ── Format helpers ─────────────────────────────────────────
 function fmtRs(n)   { return "Rs " + Number(n).toLocaleString("en-IN"); }
 function fmtDate(d) { return d ? d.slice(0, 10) : "—"; }
