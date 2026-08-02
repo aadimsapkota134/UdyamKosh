@@ -21,7 +21,44 @@
   <p class="page-subtitle">Max Rs 10,00,000 per startup at 3% interest</p>
 
   <!-- Submit application -->
- 
+ <div class="card" style="padding:20px">
+    <div class="card-header" style="margin:-20px -20px 20px; padding:12px 20px">
+        Submit new application
+    </div>
+
+    <form id="apply-form">
+        <div class="form-grid">
+            <div class="form-group">
+                <label>Startup ID</label>
+                <input
+                    name="startup_id"
+                    type="number"
+                    required
+                    placeholder="e.g. 1"
+                >
+            </div>
+            <div class="form-group">
+                <label>Requested amount (Rs)</label>
+                <input
+                    name="requested_amount"
+                    type="number"
+                    required
+                    placeholder="Max 10,00,000"
+                >
+            </div>
+        </div>
+        <div class="form-group">
+            <label>Purpose</label>
+            <textarea
+                name="purpose"
+                placeholder="Describe how the loan will be used…"
+            ></textarea>
+        </div>
+        <button type="submit" class="btn btn-primary">
+            Submit application
+        </button>
+    </form>
+</div>
   <!-- Filter + list -->
   <div class="card">
     <div class="card-header">
@@ -57,7 +94,44 @@
 <div id="toast"></div>
 <script src="../js/api.js"></script>
 <script>
-  
+  async function loadApps(status = "") {
+    try {
+        const path = status
+            ? `/applications/?status=${status}`
+            : "/applications/";
+
+        const apps = await apiGet(path);
+        const tbody = document.getElementById("apps-table");
+
+        tbody.innerHTML = apps.length
+            ? apps.map(a => `
+                <tr>
+                    <td>${a.application_id}</td>
+                    <td>${a.startup_name}</td>
+                    <td>${a.province}</td>
+                    <td>${fmtRs(a.requested_amount)}</td>
+                    <td>${fmtDate(a.applied_on)}</td>
+                    <td>${badge(a.status)}</td>
+                    <td style="display:flex;gap:6px">
+                        ${a.status === "submitted" || a.status === "under_review"
+                            ? `
+                                <button class="btn btn-sm" onclick="review(${a.application_id}, 'approved')">Approve</button>
+                                <button class="btn btn-sm" style="color:var(--danger)" onclick="review(${a.application_id}, 'rejected')">Reject</button>
+                              `
+                            : ""}
+                        ${a.status === "approved"
+                            ? `
+                                <button class="btn btn-sm btn-primary" onclick="disburse(${a.application_id})">Disburse</button>
+                              `
+                            : ""}
+                    </td>
+                </tr>
+            `).join("")
+            : `<tr><td colspan="7" style="text-align:center;color:var(--muted);padding:24px">No applications found.</td></tr>`;
+    } catch (e) {
+        toast(e.message, true);
+    }
+}
   async function review(id, status) {
     try {
       await apiPatch(`/applications/${id}/review`, { status, reviewed_by: 1 });
