@@ -25,5 +25,29 @@ def loan_repayments(loan_id):
 
 @repayments_bp.route("/", methods=["POST"])
 
+def record_repayment():
+        data = request.get_json()
+          conn = get_connection()
+           try:
+           with conn.cursor() as cur:
+            cur.execute("""
+       INSERT INTO repayment
+           (loan_id, amount_paid, payment_method,
+               transaction_ref, penalty_applied)
+                VALUES (%s, %s, %s, %s, %s)
+       RETURNING *
+               """, (
+             data["loan_id"], data["amount_paid"],
+            data.get("payment_method"), data.get("transaction_ref"),
+           data.get("penalty_applied", 0)
+           ))
+         # Update outstanding balance
+      cur.execute("""
+    UPDATE loan
+    SET outstanding_balance = outstanding_balance - %s
+   WHERE loan_id = %s
+     """, (data["amount_paid"], data["loan_id"]))
+     conn.commit()
+return jsonify(cur.fetchone()), 201
     finally:
         conn.close()
