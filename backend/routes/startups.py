@@ -34,7 +34,30 @@ def get_startup(startup_id):
         conn.close()
 
 @startups_bp.route("/", methods=["POST"])
-..... // delete it later 
+ def create_startup():
+    data = request.get_json()
+    conn = get_connection()
+
+    try:
+        with conn.cursor() as cur:
+            cur.execute("""
+                INSERT INTO startup
+                    (name, registration_no, province, sector,
+                     annual_turnover, registered_on, owner_name, contact_email)
+                VALUES (%s, %s, %s, %s, %s, %s, %s, %s)
+                RETURNING *
+            """, (
+                data["name"],
+                data["registration_no"],
+                data["province"],
+                data.get("sector"),
+                data.get("annual_turnover"),
+                data["registered_on"],
+                data.get("owner_name"),
+                data.get("contact_email")
+            ))
+
+    conn.commit()
             return jsonify(cur.fetchone()), 201
     finally:
         conn.close()
