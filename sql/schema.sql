@@ -75,9 +75,6 @@ CREATE TABLE loan (
                         CHECK (status IN ('active','closed','defaulted')),
     outstanding_balance DECIMAL(15,2)
 );
-ALTER TABLE tax_exemption
-ADD CONSTRAINT chk_exemption_dates
-CHECK (exemption_end > exemption_start);
 -- ─────────────────────────────────────────────
 -- 5. REPAYMENT
 -- ─────────────────────────────────────────────
@@ -90,7 +87,6 @@ CREATE TABLE repayment (
     transaction_ref VARCHAR(100)  UNIQUE,
     penalty_applied DECIMAL(10,2) DEFAULT 0.00
 );
-
 -- ─────────────────────────────────────────────
 -- 6. TAX_EXEMPTION
 -- ─────────────────────────────────────────────
@@ -128,8 +124,29 @@ FOR EACH ROW EXECUTE FUNCTION create_tax_exemption();
 -- ─────────────────────────────────────────────
 -- VIEW: v_loan_summary (replaces the heavy JOIN query)
 -- ─────────────────────────────────────────────
-
-
+CREATE VIEW v_loan_summary AS
+SELECT
+l.loan_id,
+s.name                              AS startup_name,
+s.province,
+s.annual_turnover,
+l.principal_amount,
+l.interest_rate,
+l.tenure_months,
+l.disbursed_on,
+l.due_date,
+l.status,
+l.outstanding_balance,
+COALESCE(SUM(r.amount_paid), 0)     AS total_repaid,
+ROUND(
+COALESCE(SUM(r.amount_paid), 0)
+/ NULLIF(l.principal_amount, 0) * 100, 2
+)                                   AS percent_repaid
+FROM loan l
+JOIN loan_application la ON l.application_id = la.application_id
+JOIN startup s           ON la.startup_id    = s.startup_id
+LEFT JOIN repayment r    ON r.loan_id        = l.loan_id
+GROUP BY l.loan_id, s.name, s.province, s.annual_turnover;
 -- ─────────────────────────────────────────────
 -- SEED DATA (for development / demo)
 -- ─────────────────────────────────────────────
