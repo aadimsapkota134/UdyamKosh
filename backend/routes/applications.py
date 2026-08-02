@@ -29,7 +29,21 @@ def list_applications():
         conn.close()
 
 @applications_bp.route("/", methods=["POST"])
-
+def submit_application():
+     data = request.get_json()
+      conn = get_connection()
+      try:
+      with conn.cursor() as cur:
+    cur.execute("""
+      INSERT INTO loan_application
+      (startup_id, requested_amount, purpose)
+      VALUES (%s, %s, %s)
+      RETURNING *
+      """, (data["startup_id"], data["requested_amount"], data.get("purpose")))
+      conn.commit()
+      return jsonify(cur.fetchone()), 201
+finally:
+conn.close()
 
 @applications_bp.route("/<int:app_id>/review", methods=["PATCH"])
 def review_application(app_id):
